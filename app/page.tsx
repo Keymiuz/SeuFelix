@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, DragEvent, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 
 type Source = "AI" | "HUMAN";
 type TicketKey =
@@ -25,6 +25,7 @@ type TicketKey =
   | "notes";
 
 type TicketFields = Record<TicketKey, string>;
+type Provider = { name: string; company: string; email: string; region: string; phone: string; cep: string; categories: string[] };
 
 const emptyFields: TicketFields = {
   customerName: "",
@@ -131,6 +132,18 @@ function EditableField({
   );
 }
 
+function ProviderRecommendations({ providers, fields, status, onIndicate }: { providers: Provider[]; fields: TicketFields; status: string; onIndicate: (provider: Provider) => void }) {
+  if (status !== "ready" && status !== "demo") return null;
+  const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const product = normalize(fields.product);
+  const matches = providers.map((provider) => {
+    const productMatch = product && provider.categories.some((category) => normalize(category).includes(product) || product.includes(normalize(category)));
+    const regionMatch = fields.state && provider.region === fields.state.toUpperCase();
+    return { provider, score: (productMatch ? 2 : 0) + (regionMatch ? 1 : 0) };
+  }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.provider);
+  return <div className="provider-recommendations"><div className="section-label">PRESTADORES INDICADOS</div>{matches.length ? matches.map((provider) => <div className="provider-card" key={`${provider.name}-${provider.company}`}><div className="provider-avatar">{provider.name.slice(0, 1).toUpperCase()}</div><div><strong>{provider.name}</strong><span>{provider.company} Â· {provider.region}</span><small>{provider.phone || provider.email}</small></div><button className="provider-action" onClick={() => onIndicate(provider)}>Indicar</button></div>) : <p className="provider-empty">Nenhum prestador compatÃ­vel encontrado.</p>}</div>;
+}
+
 function readImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -165,6 +178,25 @@ export default function Home() {
   const [error, setError] = useState("");
   const [confidence, setConfidence] = useState(0);
   const [saved, setSaved] = useState(false);
+  const [providers, setProviders] = useState<Provider[]>([]);
+
+  useEffect(() => {
+    fetch("/providers.json").then((response) => response.json()).then(setProviders).catch(() => setProviders([]));
+  }, []);
+
+  const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const recommendedProviders = providers
+    .map((provider) => {
+      const product = normalized(fields.product);
+      const categories = provider.categories.map(normalized);
+      const productMatch = product && categories.some((category) => category.includes(product) || product.includes(category));
+      const regionMatch = fields.state && provider.region === fields.state.toUpperCase();
+      return { provider, score: (productMatch ? 2 : 0) + (regionMatch ? 1 : 0) };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => item.provider);
 
   function updateField(field: TicketKey, value: string) {
     setFields((current) => ({ ...current, [field]: value }));
@@ -270,7 +302,7 @@ export default function Home() {
       <section className="content-area">
         <header className="topbar"><div className="breadcrumbs"><span>Seu Felix</span><span className="slash">/</span><strong>Nova ficha</strong></div><div className="topbar-actions"><span className="secure-label"><span>â—</span> ambiente seguro</span><button className="help-button">?</button></div></header>
 
-        <div className="capture-layout">
+        <div className="capture-layout"><ProviderRecommendations providers={providers} fields={fields} status={status} onIndicate={(provider) => setFields((current) => ({ ...current, notes: `${current.notes ? `${current.notes} ` : ""}Indicado: ${provider.name} - ${provider.company}.` }))} />
           <section className="capture-panel">
             <div className="page-heading"><div><div className="eyebrow">ENTRADA DO CHAMADO</div><h1>Envie uma foto</h1><p>O Felix Copilot identifica os dados e preenche a ficha de atendimento para vocÃª.</p></div><span className="step-pill">01 <span>/ 01</span></span></div>
             <div className={`dropzone ${isDragging ? "dragging" : ""} ${imagePreview || fileName ? "has-image" : ""}`} onClick={() => fileInput.current?.click()} onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") fileInput.current?.click(); }}>
