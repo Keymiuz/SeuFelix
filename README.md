@@ -28,6 +28,8 @@ O projeto já inclui uma configuração de build compatível com a Vercel. Impor
 
 O build usado pela Vercel é `npm run build:vercel`. As chaves reais devem ser cadastradas nas variáveis de ambiente da Vercel; o arquivo `.env.example` contém apenas valores de exemplo.
 
+Para ativar a leitura real das fotos, cadastre `OPENAI_API_KEY` no ambiente de produção da Vercel. Sem essa chave, a interface entra em modo demonstração para permitir testar o fluxo de preenchimento da ficha.
+
 Para validar produção:
 
 ```bash
