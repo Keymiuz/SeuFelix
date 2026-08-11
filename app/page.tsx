@@ -25,7 +25,7 @@ type TicketKey =
   | "notes";
 
 type TicketFields = Record<TicketKey, string>;
-type Provider = { name: string; company: string; email: string; region: string; phone: string; cep: string; categories: string[] };
+type Provider = { name: string; company: string; email: string; region: string; phone: string; cep: string; categories: string[]; balance?: number };
 
 const emptyFields: TicketFields = {
   customerName: "",
@@ -140,7 +140,7 @@ function ProviderRecommendations({ providers, fields, status, onIndicate }: { pr
     const productMatch = product && provider.categories.some((category) => normalize(category).includes(product) || product.includes(normalize(category)));
     const regionMatch = fields.state && provider.region === fields.state.toUpperCase();
     return { provider, score: (productMatch ? 2 : 0) + (regionMatch ? 1 : 0) };
-  }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.provider);
+  }).filter((item) => item.provider.balance && item.score > 0).sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.provider);
   return <div className="provider-recommendations"><div className="section-label">PRESTADORES INDICADOS</div>{matches.length ? matches.map((provider) => <div className="provider-card" key={`${provider.name}-${provider.company}`}><div className="provider-avatar">{provider.name.slice(0, 1).toUpperCase()}</div><div><strong>{provider.name}</strong><span>{provider.company} Â· {provider.region}</span><small>{provider.phone || provider.email}</small></div><button className="provider-action" onClick={() => onIndicate(provider)}>Indicar</button></div>) : <p className="provider-empty">Nenhum prestador compatÃ­vel encontrado.</p>}</div>;
 }
 
@@ -181,7 +181,13 @@ export default function Home() {
   const [providers, setProviders] = useState<Provider[]>([]);
 
   useEffect(() => {
-    fetch("/providers.json").then((response) => response.json()).then(setProviders).catch(() => setProviders([]));
+    Promise.all([fetch("/providers.json").then((response) => response.json()), fetch("/provider-balances.json").then((response) => response.json())]).then(([directory, balances]) => {
+      const normalizeName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      setProviders((directory as Provider[]).map((provider) => {
+        const match = balances.find((item: { name: string; company: string; balance: number }) => normalizeName(item.name).includes(normalizeName(provider.name)) || normalizeName(provider.name).includes(normalizeName(item.name)) || normalizeName(item.company) === normalizeName(provider.company));
+        return match ? { ...provider, balance: match.balance, phone: match.phone || provider.phone } : provider;
+      }));
+    }).catch(() => setProviders([]));
   }, []);
 
   const normalized = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
