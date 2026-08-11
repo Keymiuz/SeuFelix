@@ -224,7 +224,7 @@ export default function Home() {
         fillDemoFields("A foto foi recebida. Cadastre OPENAI_API_KEY na Vercel para substituir o preenchimento demonstrativo pela leitura real.");
         return;
       }
-      fillDemoFields("A foto foi recebida, mas a IA está indisponível agora. A ficha continua editável e pode ser salva.");
+      fillDemoFields(result.error || "A foto foi recebida, mas a IA está indisponível agora. A ficha continua editável e pode ser salva.");
     } catch (analysisError) {
       fillDemoFields(analysisError instanceof Error ? `${analysisError.message} A ficha continua editável e pode ser salva.` : "A IA está indisponível agora. A ficha continua editável e pode ser salva.");
     }

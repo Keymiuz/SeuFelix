@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       input: [{
         role: "user",
         content: [
@@ -57,7 +57,12 @@ export async function POST(request: Request) {
   if (!response.ok) {
     const detail = await response.text();
     console.error("OpenAI image analysis failed", response.status, detail);
-    return NextResponse.json({ error: "A leitura da foto falhou. Tente novamente." }, { status: 502 });
+    const error = response.status === 401 || response.status === 403
+      ? "A OpenAI rejeitou a API key. Confirme se ela foi criada na plataforma da API."
+      : response.status === 429
+        ? "A OpenAI informou limite ou billing indisponível para esta conta."
+        : `A OpenAI recusou a requisição (erro ${response.status}).`;
+    return NextResponse.json({ error, upstreamStatus: response.status }, { status: 502 });
   }
 
   const result = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
