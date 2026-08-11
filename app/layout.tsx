@@ -1,12 +1,1 @@
-import type { Metadata } from "next";
-import "./globals.css";
-
-export const metadata: Metadata = {
-  title: "Felix Copilot Ã¢â‚¬â€ Atendimento inteligente",
-  description: "Copiloto de atendimento para chamados de serviÃƒÂ§os e assistÃƒÂªncia tÃƒÂ©cnica.",
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
-};
-
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-BR"><body>{children}</body></html>;
-}
+Šjh®Ûr¥ãµ§Zµ§ë¢iŞÆØ¦¦Šíş	hm©lrËÆš+µÊ'²Ùµ§Zµ£µ§Zµ

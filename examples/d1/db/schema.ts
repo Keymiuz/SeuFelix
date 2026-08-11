@@ -1,9 +1,1 @@
-import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-
-export const notes = sqliteTable("notes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title").notNull(),
-  content: text("content").notNull().default(""),
-  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+Šjh®Û*•úè™ÚâÏ9^¢¹¢šš+¶)íz«²©bµäÚnW­{_®‰®,ó•ê+›û*–+^rŠŞ{h®×(Ëg¢×¬²©bµäÚnW§¢×¬‰Ø§µè®'i®)š¯"É«­ ‰Ü­éÛk¹ëb¶W­{mŠÙ^‹MºY\¢{^Û^Æ×(×§¶z-6éeuçÚº[\­æ­yĞ-µìmr·šµçZ¶z-6éeuçÚº[lªP”EM2$À0
