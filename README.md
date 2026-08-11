@@ -22,6 +22,12 @@ npm install
 npm run dev
 ```
 
+## Publicar na Vercel
+
+O projeto já inclui uma configuração de build compatível com a Vercel. Importe o repositório `Keymiuz/SeuFelix` no painel da Vercel e mantenha a pasta raiz como diretório do projeto.
+
+O build usado pela Vercel é `npm run build:vercel`. As chaves reais devem ser cadastradas nas variáveis de ambiente da Vercel; o arquivo `.env.example` contém apenas valores de exemplo.
+
 Para validar produção:
 
 ```bash
