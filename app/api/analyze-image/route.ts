@@ -46,9 +46,8 @@ export async function POST(request: Request) {
         ],
       }],
       generationConfig: {
-        responseFormat: {
-          text: { mimeType: "application/json", schema },
-        },
+        responseMimeType: "application/json",
+        responseSchema: schema,
       },
     }),
   });
