@@ -1,2 +1,7 @@
-Šjh®×^~)Þ
-‰ßŠë¢gk‹<åzH­{h®×^}«¥µ×ŸŠw‚¢wâ‚‹­ýÚâÏ9^±È^™¯Ýoû…éš¶ÇbjWœ¶Ê¥Š×
+import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
+  out: "./drizzle",
+  schema: "./db/schema.ts",
+  dialect: "sqlite",
+});

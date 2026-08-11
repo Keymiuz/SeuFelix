@@ -1,5 +1,17 @@
-"{^‚¶¨~ën­§(˜(Z·
-(´ã>f§¶f¨®(™Öœ¢{Ş®ÆzÆœ¢™ZuªZ­ª®zˆ§nŒfj{š–Ç£jË›²Ø­¹Ú)¢»¦iÖ©µ§h­×‚…«p¢‹j¹©İ¡¨§µè+j‡è­«­¢¸³iÖ‚¢{kjÚ,º«‰Ú-±ìi¢»b×«}§
-‰ïz»¶*'J‹«qàj›^®X¬´*'½êìjØ¨Ãë¢h¬x*'½êìjØ¨­
-‰ïz»¶*'‰Û-®)à>º&ŠÇ‚¢{Ş®Æ­Š‰ìzwLzËè²Úâèw+-®)à>º&ŠÇ¯¢'Lj{š”*'½êìjØ¨*.­ÇšŠjezg§µª¶æ¥m«iÖ™Ö¢Éhq¨¬RfŸºÛ«h(Z·
-(´*'½êìjØ¨*.­Çz÷«™ª^j¹Æ z{)j¶œºËh™êÚéízÌ¬µé¢‚z+jwhz÷§¶‹(¥êÚr*'j+¢j&¹Ö§i×©®*+‰Öy«k‰»¢¡é®u©Úuë-jÛ¬Ç+y×§r&¢±Ú…«p¢‹^u£©zpuëŞš—«™©Şqêì¢g§µéèm§$zw
+# IntegraÃ§Ã£o futura com Chatwoot
+
+O MVP mantÃ©m a origem da conversa desacoplada para que o inbox manual seja substituÃ­do por um adaptador de Chatwoot quando a integraÃ§Ã£o for autorizada.
+
+## Contrato sugerido
+
+```ts
+export interface ConversationSourceAdapter {
+  listConversations(): Promise<Conversation[]>;
+  getConversation(id: string): Promise<Conversation>;
+  sendMessage(id: string, body: string): Promise<void>;
+}
+```
+
+`ManualConversationSource` Ã© a implementaÃ§Ã£o atual, baseada em dados locais. Uma futura `ChatwootConversationSource` deverÃ¡ mapear mensagens para `customer`, `agent` e `system`, ignorando eventos operacionais como mudanÃ§a de prioridade, atribuiÃ§Ã£o e mudanÃ§a de status.
+
+As credenciais do Chatwoot e da OpenAI devem permanecer somente no backend.

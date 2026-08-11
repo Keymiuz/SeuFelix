@@ -1,1 +1,7 @@
-Šjh®Ûr¥ã^ÆĞ¨ø ~º&ìmr‰ì¶w±´*'~({B¢wâƒ÷(ø ¢›b¢{!z·¿{h®×^}«¥¶w±´*'~(
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;

@@ -1,1 +1,4 @@
-ÿς'µιν‰Ϊ–\›ro'^}«¥·ÿΐuΠλ‹<εzΦ›•λ!z·°…ιν…λ"µζ¶ζ¥—)ήyΫu«Zm«ÿτyμZ™^³χuύΦÿ±Θ^™«l~Ϊmw±jjeyμiΆ»
+// Intentionally empty by default.
+// Add Drizzle tables here when the site actually needs a database.
+// See examples/d1/db/schema.ts for an opt-in example.
+export {};

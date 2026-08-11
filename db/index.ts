@@ -1,2 +1,13 @@
-Šjh®×§½úè™Éh¹×åj·°¢¹®È¦¦Šív¸³ÎWŸ®‰®,ó•ê+›÷uŠjh®Ö¬±È^™§ë¢oìr¦iìi¢»_ºw-Š‰àzÐÛ‰÷§¼0m†º0ì®º+
-Z.uùZ­àõn)ÝŠx+.«ÚŠV›•äž¶Ø^wWâzWbžŠ^¨¿†‹-Šx#²‰í 0h®W­Ê‹«r‰í®‰i•©ÞŠxÞrÛaz·š•¸§v)à½©nzÆÞ~ŠÞºÈ§‚Ø^u«Zm«­ën®wk‹<åyéï…éš
+import { env } from "cloudflare:workers";
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "./schema";
+
+export function getDb() {
+  if (!env.DB) {
+    throw new Error(
+      "Cloudflare D1 binding `DB` is unavailable. Set the `d1` field in .openai/hosting.json to `DB` or let your control plane inject the real binding values before using the database."
+    );
+  }
+
+  return drizzle(env.DB, { schema });
+}
