@@ -1,17 +1,17 @@
 # Felix Copilot
 
-MVP de um copiloto operacional para atendentes de serviços e assistência técnica. A interface organiza conversas, dados do chamado, sugestão de resposta e matching de prestadores em um workspace dark inspirado em Chatwoot e Linear.
+MVP de um copiloto operacional para atendentes de serviÃ§os e assistÃªncia tÃ©cnica. A interface organiza conversas, dados do chamado, sugestÃ£o de resposta e matching de prestadores em um workspace dark inspirado em Chatwoot e Linear.
 
-## O que está implementado
+## O que estÃ¡ implementado
 
 - Inbox de atendimentos com conversas de exemplo baseadas na planilha Seu Felix.
-- Sugestão de resposta com variações curta, cordial e objetiva.
-- Análise simulada de conversa para validar o fluxo do produto.
-- Campos editáveis com prioridade `AI` e `HUMAN`.
-- Upload local de imagens e pré-visualização do anexo.
+- SugestÃ£o de resposta com variaÃ§Ãµes curta, cordial e objetiva.
+- AnÃ¡lise simulada de conversa para validar o fluxo do produto.
+- Campos editÃ¡veis com prioridade `AI` e `HUMAN`.
+- Upload local de imagens e prÃ©-visualizaÃ§Ã£o do anexo.
 - Resumo do chamado.
 - Cadastro e busca de prestadores.
-- Layout responsivo para operação desktop.
+- Layout responsivo para operaÃ§Ã£o desktop.
 
 ## Executar localmente
 
@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Para validar produção:
+Para validar produÃ§Ã£o:
 
 ```bash
 npm run build
@@ -30,12 +30,12 @@ npm test
 npm run lint
 ```
 
-## Variáveis de ambiente
+## VariÃ¡veis de ambiente
 
-Consulte `.env.example`. A chave da OpenAI deve permanecer somente no backend quando a integração real for adicionada.
+Consulte `.env.example`. A chave da OpenAI deve permanecer somente no backend quando a integraÃ§Ã£o real for adicionada.
 
-## Próxima etapa de arquitetura
+## PrÃ³xima etapa de arquitetura
 
-O MVP atual usa estado local para validação da experiência. A integração de produção deve adicionar o backend Spring Boot 3 / Java 21, PostgreSQL, Flyway e a Responses API da OpenAI em três etapas: extração estruturada, próxima ação e resposta sugerida.
+O MVP atual usa estado local para validaÃ§Ã£o da experiÃªncia. A integraÃ§Ã£o de produÃ§Ã£o deve adicionar o backend Spring Boot 3 / Java 21, PostgreSQL, Flyway e a Responses API da OpenAI em trÃªs etapas: extraÃ§Ã£o estruturada, prÃ³xima aÃ§Ã£o e resposta sugerida.
 
 Veja [docs/CHATWOOT_INTEGRATION.md](docs/CHATWOOT_INTEGRATION.md) e [backend/README.md](backend/README.md).
