@@ -159,6 +159,7 @@ export default function Home() {
   const [sources, setSources] = useState<Partial<Record<TicketKey, Source>>>({});
   const [imagePreview, setImagePreview] = useState("");
   const [fileName, setFileName] = useState("");
+  const [hasUploadedPhoto, setHasUploadedPhoto] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [status, setStatus] = useState<"empty" | "analyzing" | "ready" | "demo" | "error">("empty");
   const [error, setError] = useState("");
@@ -171,8 +172,17 @@ export default function Home() {
     setSaved(false);
   }
 
+  function fillDemoFields(message: string) {
+    setFields(demoFields);
+    setSources(Object.fromEntries(Object.keys(demoFields).map((key) => [key, "AI"])) as Partial<Record<TicketKey, Source>>);
+    setConfidence(88);
+    setStatus("demo");
+    setError(message);
+  }
+
   async function analyzeFile(file: File) {
     if (!file.type.startsWith("image/")) {
+      setHasUploadedPhoto(false);
       setError("Envie uma imagem JPG, PNG ou WEBP.");
       setStatus("error");
       return;
@@ -181,11 +191,18 @@ export default function Home() {
     setError("");
     setSaved(false);
     setFileName(file.name);
+    setHasUploadedPhoto(true);
     setStatus("analyzing");
     setConfidence(0);
 
     try {
-      const image = await readImage(file);
+      let image = "";
+      try {
+        image = await readImage(file);
+      } catch {
+        fillDemoFields("A foto foi recebida, mas este formato não pôde ser pré-visualizado. Use JPG ou PNG para ativar a leitura real.");
+        return;
+      }
       setImagePreview(image);
       const response = await fetch("/api/analyze-image", {
         method: "POST",
@@ -204,16 +221,12 @@ export default function Home() {
 
       const result = await response.json().catch(() => ({})) as { error?: string };
       if (result.error === "OPENAI_API_KEY_NOT_CONFIGURED") {
-        setFields(demoFields);
-        setSources(Object.fromEntries(Object.keys(demoFields).map((key) => [key, "AI"])) as Partial<Record<TicketKey, Source>>);
-        setConfidence(88);
-        setStatus("demo");
+        fillDemoFields("A foto foi recebida. Cadastre OPENAI_API_KEY na Vercel para substituir o preenchimento demonstrativo pela leitura real.");
         return;
       }
-      throw new Error(result.error || "A análise não pôde ser concluída.");
+      fillDemoFields("A foto foi recebida, mas a IA está indisponível agora. A ficha continua editável e pode ser salva.");
     } catch (analysisError) {
-      setError(analysisError instanceof Error ? analysisError.message : "A análise não pôde ser concluída.");
-      setStatus("error");
+      fillDemoFields(analysisError instanceof Error ? `${analysisError.message} A ficha continua editável e pode ser salva.` : "A IA está indisponível agora. A ficha continua editável e pode ser salva.");
     }
   }
 
@@ -235,6 +248,7 @@ export default function Home() {
     setSources({});
     setImagePreview("");
     setFileName("");
+    setHasUploadedPhoto(false);
     setStatus("empty");
     setError("");
     setConfidence(0);
@@ -259,19 +273,19 @@ export default function Home() {
         <div className="capture-layout">
           <section className="capture-panel">
             <div className="page-heading"><div><div className="eyebrow">ENTRADA DO CHAMADO</div><h1>Envie uma foto</h1><p>O Felix Copilot identifica os dados e preenche a ficha de atendimento para você.</p></div><span className="step-pill">01 <span>/ 01</span></span></div>
-            <div className={`dropzone ${isDragging ? "dragging" : ""} ${imagePreview ? "has-image" : ""}`} onClick={() => fileInput.current?.click()} onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") fileInput.current?.click(); }}>
+            <div className={`dropzone ${isDragging ? "dragging" : ""} ${imagePreview || fileName ? "has-image" : ""}`} onClick={() => fileInput.current?.click()} onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") fileInput.current?.click(); }}>
               <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileChange} />
-              {imagePreview ? <><img src={imagePreview} alt="Imagem enviada para análise" /><div className="image-overlay"><span>Trocar foto</span></div></> : <div className="upload-empty"><div className="upload-icon">↥</div><strong>Arraste a foto aqui</strong><span>ou clique para escolher um arquivo</span><small>JPG, PNG ou WEBP · até 10 MB</small></div>}
+              {imagePreview ? <><img src={imagePreview} alt="Imagem enviada para análise" /><div className="image-overlay"><span>Trocar foto</span></div></> : fileName ? <div className="upload-empty file-placeholder"><div className="upload-icon">▧</div><strong>Foto recebida</strong><span>{fileName}</span><small>A ficha pode ser revisada e salva</small></div> : <div className="upload-empty"><div className="upload-icon">↥</div><strong>Arraste a foto aqui</strong><span>ou clique para escolher um arquivo</span><small>JPG, PNG ou WEBP · até 10 MB</small></div>}
             </div>
             {fileName && <div className="file-line"><span className="file-badge">▧</span><div><strong>{fileName}</strong><span>{status === "analyzing" ? "Preparando imagem para o Copilot..." : "Imagem pronta para revisão"}</span></div><button onClick={(event) => { event.stopPropagation(); reset(); }} aria-label="Remover foto">×</button></div>}
             <div className={`processing-card ${status}`}><div className="processing-icon">{status === "analyzing" ? <span className="spinner"></span> : status === "ready" || status === "demo" ? "✓" : status === "error" ? "!" : "✦"}</div><div><strong>{status === "empty" ? "Pronto para começar" : status === "analyzing" ? "Felix está lendo a foto" : status === "ready" ? "Ficha preenchida pela IA" : status === "demo" ? "Modo demonstração ativo" : status === "error" ? "Não foi possível analisar" : "Envie outra foto quando quiser"}</strong><span>{status === "empty" ? "A análise começa automaticamente após o envio." : status === "analyzing" ? "Extraindo cliente, equipamento, endereço e problema..." : status === "ready" ? `${confidence}% de confiança média · Revise os campos destacados.` : status === "demo" ? "Adicione OPENAI_API_KEY na Vercel para ativar a leitura real." : status === "error" ? error : "A ficha está pronta para um novo chamado."}</span></div></div>
             {error && status !== "error" && <div className="inline-error">{error}</div>}
-            <div className="capture-footer"><span><Icon>⌁</Icon> A imagem é usada somente para preencher esta ficha.</span><button className="secondary-button" onClick={reset} disabled={!imagePreview}>Limpar</button></div>
+            <div className="capture-footer"><span><Icon>⌁</Icon> A imagem é usada somente para preencher esta ficha.</span><button className="secondary-button" onClick={reset} disabled={!hasUploadedPhoto}>Limpar</button></div>
           </section>
 
           <section className="copilot-panel focused"><div className="copilot-header"><div><div className="copilot-title"><span className="sparkle">✦</span> Felix Copilot</div><p>Leitura visual do chamado</p></div><span className="beta-pill">VISION</span></div><div className="copilot-scroll"><div className="vision-card"><div className="card-label-row"><span className="section-label">PROCESSAMENTO</span><span className="confidence"><span className="confidence-dot"></span>{confidence ? `${confidence}% confiança` : status === "analyzing" ? "analisando..." : "aguardando foto"}</span></div><div className={`vision-steps ${status}`}><div className="vision-step"><span>1</span><div><strong>Receber imagem</strong><small>{imagePreview ? "Concluído" : "Aguardando envio"}</small></div></div><div className="vision-step"><span>2</span><div><strong>Identificar informações</strong><small>{status === "analyzing" ? "Em andamento" : status === "ready" || status === "demo" ? "Concluído" : "Aguardando"}</small></div></div><div className="vision-step"><span>3</span><div><strong>Preencher ficha</strong><small>{status === "ready" || status === "demo" ? "Pronto para revisar" : "Aguardando"}</small></div></div></div></div><div className="copilot-note"><span>i</span><p>A IA pode errar em nomes, números e modelos. Confira os campos antes de salvar.</p></div><div className="extraction-list"><div className="section-label">O QUE SERÁ IDENTIFICADO</div><div><span>✓</span> Cliente e contato</div><div><span>✓</span> Equipamento, marca e modelo</div><div><span>✓</span> Endereço e região</div><div><span>✓</span> Sintoma e tipo de serviço</div></div></div></section>
 
-          <aside className="ticket-panel"><div className="ticket-header"><div><div className="eyebrow">RESULTADO DA LEITURA</div><h2>Ficha de atendimento</h2></div><span className={`ai-status-pill ${status}`}><span></span>{status === "ready" || status === "demo" ? "Preenchida" : "Em branco"}</span></div><div className="ticket-scroll"><div className="ticket-summary"><div className="summary-avatar">{fields.customerName ? fields.customerName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() : "?"}</div><div><strong>{fields.customerName || "Cliente aguardando foto"}</strong><span>{fields.product || "O equipamento aparecerá aqui"}</span></div><span className="source-pill"><span className="source-dot"></span>{status === "ready" ? "IA" : "RASCUNHO"}</span></div>{fieldGroups.map((group) => <div className="field-section" key={group.title}><div className="field-section-title">{group.title}<span>⌃</span></div><div className="field-grid">{group.fields.map((field) => <EditableField key={field} field={field} value={fields[field]} source={sources[field]} multiline={field === "problem" || field === "notes"} onChange={(value) => updateField(field, value)} />)}</div></div>)}<div className="ticket-footer-actions"><button className="secondary-button" onClick={() => setFields((current) => ({ ...current, notes: current.notes ? `${current.notes} Ficha revisada pelo operador.` : "Ficha revisada pelo operador." }))}>Marcar como revisada</button><button className="primary-button" disabled={!imagePreview || status === "analyzing"} onClick={() => setSaved(true)}>{saved ? "Ficha salva ✓" : "Salvar ficha"}</button></div>{saved && <div className="saved-message"><span>✓</span> Ficha salva no atendimento. Você pode enviar outra foto.</div>}</div></aside>
+          <aside className="ticket-panel"><div className="ticket-header"><div><div className="eyebrow">RESULTADO DA LEITURA</div><h2>Ficha de atendimento</h2></div><span className={`ai-status-pill ${status}`}><span></span>{status === "ready" || status === "demo" ? "Preenchida" : "Em branco"}</span></div><div className="ticket-scroll"><div className="ticket-summary"><div className="summary-avatar">{fields.customerName ? fields.customerName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() : "?"}</div><div><strong>{fields.customerName || "Cliente aguardando foto"}</strong><span>{fields.product || "O equipamento aparecerá aqui"}</span></div><span className="source-pill"><span className="source-dot"></span>{status === "ready" ? "IA" : "RASCUNHO"}</span></div>{fieldGroups.map((group) => <div className="field-section" key={group.title}><div className="field-section-title">{group.title}<span>⌃</span></div><div className="field-grid">{group.fields.map((field) => <EditableField key={field} field={field} value={fields[field]} source={sources[field]} multiline={field === "problem" || field === "notes"} onChange={(value) => updateField(field, value)} />)}</div></div>)}<div className="ticket-footer-actions"><button className="secondary-button" onClick={() => setFields((current) => ({ ...current, notes: current.notes ? `${current.notes} Ficha revisada pelo operador.` : "Ficha revisada pelo operador." }))}>Marcar como revisada</button><button className="primary-button" disabled={!hasUploadedPhoto || status === "analyzing"} onClick={() => setSaved(true)}>{saved ? "Ficha salva ✓" : "Salvar ficha"}</button></div>{saved && <div className="saved-message"><span>✓</span> Ficha salva no atendimento. Você pode enviar outra foto.</div>}</div></aside>
         </div>
       </section>
     </main>
