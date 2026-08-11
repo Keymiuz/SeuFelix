@@ -11,7 +11,6 @@ const fieldKeys = [
 
 const schema = {
   type: "object",
-  additionalProperties: false,
   properties: Object.fromEntries(fieldKeys.map((key) => [key, { type: "string" }])),
   required: [...fieldKeys],
 };
