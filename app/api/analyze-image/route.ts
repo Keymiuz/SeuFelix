@@ -55,12 +55,18 @@ export async function POST(request: Request) {
   if (!response.ok) {
     const detail = await response.text();
     console.error("Gemini image analysis failed", response.status, detail);
+    let upstreamMessage = "";
+    try {
+      upstreamMessage = (JSON.parse(detail) as { error?: { message?: string } }).error?.message ?? "";
+    } catch {
+      upstreamMessage = detail.slice(0, 300);
+    }
     const error = response.status === 401 || response.status === 403
       ? "O Gemini rejeitou a API key. Gere uma chave nova no Google AI Studio."
       : response.status === 429
         ? "O Gemini informou limite temporÃ¡rio do Free Tier. Tente novamente em instantes."
         : `O Gemini recusou a requisiÃ§Ã£o (erro ${response.status}).`;
-    return NextResponse.json({ error, upstreamStatus: response.status }, { status: 502 });
+    return NextResponse.json({ error: upstreamMessage ? `${error} Detalhe: ${upstreamMessage}` : error, upstreamStatus: response.status }, { status: 502 });
   }
 
   const result = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
