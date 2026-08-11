@@ -9,68 +9,68 @@ const fieldKeys = [
   "needsReport", "status", "notes",
 ] as const;
 
-const fieldProperties = Object.fromEntries(fieldKeys.map((key) => [key, { type: "string" }])) as Record<string, { type: "string" }>;
-
 const schema = {
   type: "object",
   additionalProperties: false,
-  properties: fieldProperties,
+  properties: Object.fromEntries(fieldKeys.map((key) => [key, { type: "string" }])),
   required: [...fieldKeys],
 };
 
-function getOutputText(response: { output_text?: string; output?: Array<{ content?: Array<{ type?: string; text?: string }> }> }) {
-  if (response.output_text) return response.output_text;
-  return response.output?.flatMap((item) => item.content ?? []).find((part) => part.type === "output_text")?.text ?? "";
+function getGeminiText(response: { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }) {
+  return response.candidates?.[0]?.content?.parts?.find((part) => part.text)?.text ?? "";
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "OPENAI_API_KEY_NOT_CONFIGURED" }, { status: 503 });
+    return NextResponse.json({ error: "GEMINI_API_KEY_NOT_CONFIGURED" }, { status: 503 });
   }
 
   const body = await request.json().catch(() => null) as { image?: string } | null;
   const image = body?.image ?? "";
-  if (!/^data:image\/(png|jpeg|webp);base64,/.test(image) || image.length > 12_000_000) {
-    return NextResponse.json({ error: "Imagem inválida ou muito grande." }, { status: 400 });
+  const match = image.match(/^data:(image\/(?:png|jpeg|webp));base64,(.+)$/);
+  if (!match || image.length > 12_000_000) {
+    return NextResponse.json({ error: "Imagem invÃ¡lida ou muito grande." }, { status: 400 });
   }
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "gpt-4o",
-      input: [{
-        role: "user",
-        content: [
+      contents: [{
+        parts: [
           {
-            type: "input_text",
-            text: "Analise esta foto de um chamado de assistência técnica. Extraia somente informações visíveis ou claramente legíveis e preencha todos os campos do JSON. Não invente dados: quando algo não estiver visível, use 'Não informado'. Em problem, descreva o sintoma observado. Em notes, registre dúvidas de leitura. Responda em português do Brasil.",
+            text: "Analise esta foto de um chamado de assistÃªncia tÃ©cnica. Extraia somente informaÃ§Ãµes visÃ­veis ou claramente legÃ­veis e preencha todos os campos do JSON. NÃ£o invente dados: quando algo nÃ£o estiver visÃ­vel, use 'NÃ£o informado'. Em problem, descreva o sintoma observado. Em notes, registre dÃºvidas de leitura. Responda em portuguÃªs do Brasil.",
           },
-          { type: "input_image", image_url: image, detail: "high" },
+          { inlineData: { mimeType: match[1], data: match[2] } },
         ],
       }],
-      text: { format: { type: "json_schema", name: "felix_atendimento", strict: true, schema } },
+      generationConfig: {
+        responseFormat: {
+          text: { mimeType: "application/json", schema },
+        },
+      },
     }),
   });
 
   if (!response.ok) {
     const detail = await response.text();
-    console.error("OpenAI image analysis failed", response.status, detail);
+    console.error("Gemini image analysis failed", response.status, detail);
     const error = response.status === 401 || response.status === 403
-      ? "A OpenAI rejeitou a API key. Confirme se ela foi criada na plataforma da API."
+      ? "O Gemini rejeitou a API key. Gere uma chave nova no Google AI Studio."
       : response.status === 429
-        ? "A OpenAI informou limite ou billing indisponível para esta conta."
-        : `A OpenAI recusou a requisição (erro ${response.status}).`;
+        ? "O Gemini informou limite temporÃ¡rio do Free Tier. Tente novamente em instantes."
+        : `O Gemini recusou a requisiÃ§Ã£o (erro ${response.status}).`;
     return NextResponse.json({ error, upstreamStatus: response.status }, { status: 502 });
   }
 
-  const result = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
-  const outputText = getOutputText(result);
+  const result = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+  const outputText = getGeminiText(result);
   try {
-    return NextResponse.json({ fields: JSON.parse(outputText), confidence: 94, source: "ai" });
+    return NextResponse.json({ fields: JSON.parse(outputText), confidence: 91, source: "gemini" });
   } catch {
-    console.error("OpenAI image analysis returned invalid JSON", outputText);
-    return NextResponse.json({ error: "A resposta da análise veio incompleta. Tente novamente." }, { status: 502 });
+    console.error("Gemini image analysis returned invalid JSON", outputText);
+    return NextResponse.json({ error: "A resposta do Gemini veio incompleta. Tente novamente." }, { status: 502 });
   }
 }
+
